@@ -577,7 +577,9 @@ var Gmail =  function() {
                       'refresh'     : 'refresh',
                       'rtr'         : 'restore_message_in_thread',
                       'open_email'  : 'open_email',
-                      'toggle_threads'  : 'toggle_threads'
+                      'toggle_threads'  : 'toggle_threads',
+                      'chat_open'   : 'chat_open',
+                      'chat_close'  : 'chat_close'
                      }
 
     if(typeof params.url.ik == 'string') {
@@ -685,6 +687,74 @@ var Gmail =  function() {
       }
     }
 
+    // We have a bunch of requests in the pipeline
+    cnt = 0;
+    chatsOpen = {};
+    while(true) {
+      // If we figured out this was hangouts, no need to process the following
+      if(api.tracker.hangouts == true)
+        break;
+
+      __sc  = 'req' + cnt + '__sc'
+      _cmd  = 'req' + cnt + '_cmd'
+      _type = 'req' + cnt + '_type'
+      _jid  = 'req' + cnt + '_jid'
+
+      if(!(_type in sent_params)) {
+        break;
+      }
+
+      if(sent_params[__sc] == "c" && sent_params[_cmd] == "n" && sent_params[_type] == "c") {
+        chatsOpen[sent_params[_jid]] = ['open', params.url, params.body, sent_params];
+        api.tracker.hangouts = false;
+      } else if(sent_params[__sc] == "c" && sent_params[_cmd] == "c" && sent_params[_type] == "c") {
+        chatsOpen[sent_params[_jid]] = ['close', params.url, params.body, sent_params];
+        api.tracker.hangouts = false;
+      }
+
+      cnt = cnt + 1;
+    }
+
+    while(true) {
+      // If this is gchat, no need to process the hangout specific events
+      if(api.tracker.hangouts == false)
+        break;
+
+      cnt = cnt + 1;
+    }
+
+    // Now, we use the chat request processed above to run the callbacks
+    // We need a seperate branch to handle this because there can be multiple chat windows
+    // being close/opened at the same time (possible with a laggy connection)
+    for(email in chatsOpen) {
+      details = chatsOpen[email]
+      oc = details[0]
+      newResponse = [details[1], details[2], details[3]]
+
+      var ac='chat_open';
+      if(oc=='close') {
+        ac = 'chat_close';
+      }
+
+      if(action_map[ac] in api.tracker.watchdog) {
+        api.tracker.watchdog[action_map[ac]].apply(undefined, newResponse);
+      }
+
+      if(action_map[ac] in api.tracker.response_watchdog) {
+        var curr_onreadystatechange = xhr.onreadystatechange;
+        xhr.onreadystatechange = function(progress) {
+          if (this.readyState === this.DONE) {
+            response.push(api.tools.parse_response(progress.target.responseText));
+            api.tracker.response_watchdog[action_map[ac]].apply(undefined, newResponse);
+          }
+          if (curr_onreadystatechange) {
+            curr_onreadystatechange.apply(this, arguments);
+          }
+        }
+      }
+    }
+
+    // Now, we process any other events
     if(response != null) {
 
       if(action_map[action] in api.tracker.watchdog) {
