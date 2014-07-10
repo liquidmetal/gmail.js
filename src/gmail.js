@@ -691,7 +691,7 @@ var Gmail =  function() {
     cnt = 0;
     chatsOpen = {};
     while(true) {
-      // If we figured out this was hangouts, no need to process the following
+      // If we figured out this was hangouts, no need to process the gchat specific events
       if(api.tracker.hangouts == true)
         break;
 
@@ -715,13 +715,14 @@ var Gmail =  function() {
       cnt = cnt + 1;
     }
 
-    while(true) {
+    // TODO For now, just comment out the hangouts loop
+    //while(true) {
       // If this is gchat, no need to process the hangout specific events
-      if(api.tracker.hangouts == false)
-        break;
+      //if(api.tracker.hangouts == false)
+      //  break;
 
-      cnt = cnt + 1;
-    }
+    //  cnt = cnt + 1;
+    //}
 
     // Now, we use the chat request processed above to run the callbacks
     // We need a seperate branch to handle this because there can be multiple chat windows
