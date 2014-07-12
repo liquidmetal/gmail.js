@@ -1280,5 +1280,24 @@ var Gmail =  function() {
     return undefined;
   }
 
+  api.chat.chat_windows = function() {
+    is_hangouts = api.chat.is_hangouts();
+    if(is_hangouts==undefined) {
+      return [];
+    }
+
+    dw = $('.dw')
+
+    ret = []
+    if(is_hangouts) {
+      chatWindows = $(".nH.aJl.nn", dw)
+      // Not implemented yet
+    } else {
+      chatWindows = $(".nH.nn > .no", dw)
+      console.log(chatWindows)
+    }
+
+    return ret;
+  }
   return api;
 }
