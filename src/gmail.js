@@ -579,7 +579,8 @@ var Gmail =  function() {
                       'open_email'  : 'open_email',
                       'toggle_threads'  : 'toggle_threads',
                       'chat_open'   : 'chat_open',
-                      'chat_close'  : 'chat_close'
+                      'chat_close'  : 'chat_close',
+                      'chat_message': 'chat_message'
                      }
 
     if(typeof params.url.ik == 'string') {
@@ -699,6 +700,7 @@ var Gmail =  function() {
       _cmd  = 'req' + cnt + '_cmd'
       _type = 'req' + cnt + '_type'
       _jid  = 'req' + cnt + '_jid'
+      _chatstate  = 'req' + cnt + '_chatstate'
 
       if(!(_type in sent_params)) {
         break;
@@ -710,6 +712,13 @@ var Gmail =  function() {
       } else if(sent_params[__sc] == "c" && sent_params[_cmd] == "c" && sent_params[_type] == "c") {
         chatsOpen[sent_params[_jid]] = ['close', params.url, params.body, sent_params];
         api.tracker.hangouts = false;
+      } else if(sent_params[__sc] == 'c' && sent_params[_type]=='m') {
+        if(!(_chatstate in sent_params) || (_chatstate in sent_params && sent_params[_chatstate] != 'composing')) {
+          var _to = sent_params['req' + cnt + '_to'];
+          var _text = sent_params['req' + cnt + '_text'];
+          chatsOpen[_to] = ['msg', params.url, params.body, sent_params];
+          api.tracker.hangouts = false;
+        }
       }
 
       cnt = cnt + 1;
@@ -735,6 +744,10 @@ var Gmail =  function() {
       var ac='chat_open';
       if(oc=='close') {
         ac = 'chat_close';
+      } else if (oc=='open') {
+        ac = 'chat_open';
+      } else if (oc=='msg') {
+        ac = 'chat_message';
       }
 
       if(action_map[ac] in api.tracker.watchdog) {
